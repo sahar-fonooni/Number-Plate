@@ -1,3 +1,6 @@
-ultralytics==8.2.100
+ultralytics
+opencv-python-headless
+opencv-python
 numpy
 matplotlib
+Pillow

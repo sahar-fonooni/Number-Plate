@@ -1,10 +1,15 @@
-FROM python:3
+FROM python:3.9-slim
 
-WORKDIR /usr/src/app
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    && rm -rf /var/lib/apt/lists/*
 
-COPY requirements.txt ./
+COPY requirements.txt /app/requirements.txt
+WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY . .
+COPY . /app
 
-CMD [ "python", "./number_plate.py" ]
+EXPOSE 8080
+
+CMD ["python", "your_script.py"]

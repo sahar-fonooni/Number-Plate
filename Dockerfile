@@ -12,4 +12,4 @@ COPY . /app
 
 EXPOSE 8080
 
-CMD ["python", "your_script.py"]
+CMD ["python", "number_plate.py"]

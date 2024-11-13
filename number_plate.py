@@ -105,6 +105,10 @@ def cover_plate(model, image, logo):
   cv2.imwrite(image, cv2.cvtColor(base_image, cv2.COLOR_RGB2BGR))
   return base_image
 
+def save_image_pillow(coverd_image, output_path):
+   pill_image = Image.fromarray(coverd_image)
+   pill_image.save(output_path, format= "jpg")
+
 
 # run 
 app = Flask(__name__)
@@ -115,13 +119,22 @@ logo = '/app/logo.png'
 def process_image():
   file = request.files['image']
   image = Image.open(file.stream)
+  covered_image = cover_plate(model, image, logo)
+  image_array = np.array(covered_image)
 
+  success, buffer = cv2.imencode('jpg', covered_image)
+  if not success:
+     return "Error processing image", 500
+  
+  img_io = io.BytesIO(buffer)
+  img_io.seek(0)
 
-  image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
-  covered_image = cover_plate(model, image_cv, logo)
-  _, image_array = cv2.imencode('.jpg', cv2.cvtColor(covered_image, cv2.COLOR_RGB2BGR))
-  return send_file(io.BytesIO(image_array), mimetype='image/jpg')
+  return send_file(img_io, mimetype= 'image/jpg')
 
+  
+  
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
+
+

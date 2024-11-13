@@ -104,7 +104,8 @@ def cover_plate(model, image, logo):
 
 
 # testcase
-model = YOLO("/best.pt")
+model = YOLO("/app/best.pt")
+
 logo = '/car-plate-iran copy png.png'
 
 # test the model

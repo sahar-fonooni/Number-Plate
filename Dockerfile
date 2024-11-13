@@ -9,7 +9,9 @@ COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 RUN pip install --no-cache-dir -r requirements.txt
 
+COPY best.pt /app/best.pt
 COPY . /app
+
 
 EXPOSE 8080
 

@@ -4,6 +4,9 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+from flask import Flask, request, send_file 
+import io
+
 
 def transform_directions(cordinates, rect_points, angle):
   dst_points = np.array([[0, 0], [0, min(cordinates) - 2], [max(cordinates) - 2, min(cordinates) - 2],\
@@ -103,15 +106,22 @@ def cover_plate(model, image, logo):
   return base_image
 
 
-# testcase
+# run 
+app = Flask(__name__)
 model = YOLO("/app/best.pt")
+logo = '/app/logo.png'
 
-logo = '/car-plate-iran copy png.png'
+@app.route('/process', methods=['POST'])
+def process_image():
+  file = request.files['image']
+  image = Image.open(file.stream)
 
-# test the model
-image = "39.jpg"
-covered_image = cover_plate(model, image, logo)
-image_array = np.array(covered_image)
-plt.imshow(image_array)
-plt.axis('off')
-plt.show()
+
+  image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+  covered_image = cover_plate(model, image_cv, logo)
+  _, image_array = cv2.imencode('.jpg', cv2.cvtColor(covered_image, cv2.COLOR_RGB2BGR))
+  return send_file(io.BytesIO(image_array), mimetype='image/jpeg')
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)

@@ -120,7 +120,7 @@ def process_image():
   image_cv = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
   covered_image = cover_plate(model, image_cv, logo)
   _, image_array = cv2.imencode('.jpg', cv2.cvtColor(covered_image, cv2.COLOR_RGB2BGR))
-  return send_file(io.BytesIO(image_array), mimetype='image/jpeg')
+  return send_file(io.BytesIO(image_array), mimetype='image/jpg')
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@ import numpy as np
 import cv2
 from flask import Flask, request, send_file 
 import io
-
+import os
 
 def transform_directions(cordinates, rect_points, angle):
   dst_points = np.array([[0, 0], [0, min(cordinates) - 2], [max(cordinates) - 2, min(cordinates) - 2],\
@@ -57,12 +57,19 @@ def transform_directions(cordinates, rect_points, angle):
 
 
 def cover_plate(model, image, logo):
+
+  assert os.path.exists(image), f"Image not found: {image}"
+  assert os.path.exists(logo), f"Logo not found: {logo}"
+
   # Call model
   results = model.predict(source=image, conf=0.7, verbose=False)
 
   # Load the images
   base_image = cv2.imread(image)
   overlay_image = cv2.imread(logo)
+
+  print(f"Base image shape: {base_image.shape}")
+  print(f"Overlay image shape: {overlay_image.shape}")
 
   # Change Colour Scheme
   base_image = cv2.cvtColor(base_image, cv2.COLOR_BGR2RGB)
@@ -71,7 +78,11 @@ def cover_plate(model, image, logo):
   # Fetch the Detected Box
   rect_points = np.array(np.intp(results[0].obb.xyxyxyxy.tolist()))
 
+
   for i in rect_points:
+
+    print(f"Processing rect_point: {i}")
+
     # rect_point = [i.tolist()]
     rect_pointt = np.array(i, dtype=np.int32)
     rect_point = np.expand_dims(rect_pointt, axis=0)
@@ -121,10 +132,19 @@ def process_image():
   image = Image.open(file.stream)
   covered_image = cover_plate(model, image, logo)
   image_array = np.array(covered_image)
+  plt.imshow(image_array)
+  plt.title("Processed Image")
+  plt.axis('off')
+  plt.show()
 
-  success, buffer = cv2.imencode('jpg', covered_image)
+
+  success, buffer = cv2.imencode('jpg', image_array)
   if not success:
+     print("Error: Failed to encode the image to JPEG format")
      return "Error processing image", 500
+  
+  print(f"Encoded buffer size: {len(buffer)} bytes") 
+  # print(f"Buffer content preview: {buffer[:10]}")
   
   img_io = io.BytesIO(buffer)
   img_io.seek(0)
@@ -132,9 +152,6 @@ def process_image():
   return send_file(img_io, mimetype= 'image/jpg')
 
   
-  
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
-
-

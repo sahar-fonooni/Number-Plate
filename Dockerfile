@@ -1,3 +1,4 @@
+# ubuntu version 
 FROM ubuntu:20.04
 
 ENV DEBIAN_FRONTEND=noninteractive
@@ -11,10 +12,11 @@ RUN apt-get update && apt-get install -y \
 
 RUN ln -s /usr/bin/python3.9 /usr/bin/python
 
-COPY requirements.txt /app/requirements.txt
 WORKDIR /app
 
-RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt .
+RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
+
 
 COPY best.pt /app/best.pt
 COPY logo.png /app/logo.png

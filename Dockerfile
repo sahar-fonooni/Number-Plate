@@ -1,64 +1,27 @@
-# Use Ubuntu as the base image
-FROM ubuntu:22.04
-
-# Set the working directory
-WORKDIR /app
+FROM python:3.9-slim
 
 # Install system dependencies
 RUN apt-get update && apt-get install -y \
-    python3 \
-    python3-pip \
-    python3-dev \
     libgl1-mesa-glx \
     libglib2.0-0 \
-    && apt-get clean
+    && rm -rf /var/lib/apt/lists/*
 
-# Copy the application code into the container
-COPY . /app
+# Set working directory
+WORKDIR /app
+
+# Copy requirements file (we'll create this)
+COPY requirements.txt .
 
 # Install Python dependencies
-RUN pip3 install --no-cache-dir --upgrade pip && \
-    pip3 install --no-cache-dir \
-    ultralytics \
-    opencv-python\
-    opencv-python-headless \
-    Flask \
-    Pillow \
-    matplotlib \
-    numpy
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy application files
+COPY number_plate.py .
+COPY best.pt .
+COPY logo.png .
 
 # Expose the port the app runs on
 EXPOSE 8080
 
-# Command to run the application
-CMD ["python3", "app.py"]
-
-
-
-# # ubuntu version 
-# FROM ubuntu:20.04
-
-# ENV DEBIAN_FRONTEND=noninteractive
-
-# RUN apt-get update && apt-get install -y \
-#     python3.9 \
-#     python3-pip \
-#     libgl1-mesa-glx \
-#     libglib2.0-0 \
-#     && rm -rf /var/lib/apt/lists/*
-
-# RUN ln -s /usr/bin/python3.9 /usr/bin/python
-
-# WORKDIR /app
-
-# COPY requirements.txt .
-# RUN pip install --no-cache-dir --upgrade pip && pip install --no-cache-dir -r requirements.txt
-
-
-# COPY best.pt /app/best.pt
-# COPY logo.png /app/logo.png
-# COPY . /app
-
-# EXPOSE 8080
-
-# CMD ["python", "number_plate.py"]
+# Run the application
+CMD ["python", "number_plate.py"]

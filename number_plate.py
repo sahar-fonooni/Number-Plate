@@ -1,9 +1,12 @@
 import ultralytics
 from ultralytics import YOLO
+from flask import Flask, request, jsonify, send_file
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
 import cv2
+import os
+
 
 def transform_directions(cordinates, rect_points, angle):
   dst_points = np.array([[0, 0], [0, min(cordinates) - 2], [max(cordinates) - 2, min(cordinates) - 2],\
@@ -103,13 +106,62 @@ def cover_plate(model, image, logo):
   return base_image
 
 
+# # test the model
+# image = "/app/39.jpg"
+# covered_image = cover_plate(model, image, logo)
+# image_array = np.array(covered_image)
+# plt.imshow(image_array)
+# plt.axis('off')
+# plt.show()
+
+
+# Initialize Flask app and YOLO model
+app = Flask(__name__)
 model = YOLO("/app/best.pt")
 logo = '/app/logo.png'
 
-# test the model
-image = "/app/39.jpg"
-covered_image = cover_plate(model, image, logo)
-image_array = np.array(covered_image)
-plt.imshow(image_array)
-plt.axis('off')
-plt.show()
+# Function definitions (transform_directions and cover_plate) remain unchanged
+
+
+@app.route('/process', methods=['POST'])
+def process_image():
+    # Ensure an image file is provided
+    if 'image' not in request.files:
+        return jsonify({"error": "No image file provided"}), 400
+    
+    file = request.files['image']
+    
+    # Save the uploaded file to a temporary location
+    input_image_path = "/tmp/input_image.jpg"
+    file.save(input_image_path)
+    
+    # Set the output image path
+    output_image_path = "/tmp/output_image.jpg"
+    
+    try:
+        # Process the image with YOLO model and overlay logo
+        cover_plate(model, input_image_path, logo)
+        
+        # Move the processed image to the output path
+        os.rename(input_image_path, output_image_path)
+        
+        # Return success message and link to download the image
+        return jsonify({
+            "message": "Image processed successfully",
+            "download_url": "/download"
+        }), 200
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/download', methods=['GET'])
+def download_image():
+    output_image_path = "/tmp/output_image.jpg"
+    if os.path.exists(output_image_path):
+        return send_file(output_image_path, mimetype='image/jpeg', as_attachment=True, download_name="processed_image.jpg")
+    else:
+        return jsonify({"error": "No processed image available"}), 404
+
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=8080)

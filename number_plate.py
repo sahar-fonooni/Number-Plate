@@ -158,10 +158,14 @@ def process_image():
 def download_image():
     output_image_path = "/tmp/output_image.jpg"
     if os.path.exists(output_image_path):
-        return send_file(output_image_path, mimetype='image/jpeg', as_attachment=True, download_name="processed_image.jpg")
+        return jsonify({
+            "message": "Image processed successfully",
+            "download_url": "/download"
+        }), 200
     else:
         return jsonify({"error": "No processed image available"}), 404
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
+    

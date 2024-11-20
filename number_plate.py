@@ -146,26 +146,13 @@ def process_image():
         os.rename(input_image_path, output_image_path)
         
         # Return success message and link to download the image
-        return jsonify({
-            "message": "Image processed successfully",
-            "download_url": "/download"
-        }), 200
+        return send_file(output_image_path, mimetype='image/jpeg', as_attachment=True, download_name="processed_image.jpg")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/download', methods=['GET'])
-def download_image():
-    output_image_path = "/tmp/output_image.jpg"
-    if os.path.exists(output_image_path):
-        return jsonify({
-            "message": "Image processed successfully",
-            "download_url": "/download"
-        }), 200
-    else:
-        return jsonify({"error": "No processed image available"}), 404
-
-
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
-    
+
+
+

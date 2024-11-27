@@ -149,10 +149,10 @@ def index():
 
 @app.route('/resize', methods=['POST'])
 def resize_image():
-   if 'file' not in request.files:
+   if 'image' not in request.files:
       return "No file sent.", 400
    
-   file = request.files['file']
+   file = request.files['image']
    if file.filename == '':
       return "The file name is empty." , 400
    

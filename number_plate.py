@@ -118,7 +118,7 @@ def resize_one_image_by_width(image_path, new_width, output_path):
 
   #  change size 
    resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-   resize_image.save(output_path)
+   resized_image.save(output_path)
 
 
 

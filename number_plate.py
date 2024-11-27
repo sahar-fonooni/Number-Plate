@@ -106,7 +106,7 @@ def cover_plate(model, image, logo):
   return base_image
 
 
-def resize_one_image_by_width(image_path, output_path, new_width):
+def resize_one_image_by_width(image_path, new_width):
    
    image = Image.open(image_path)
 
@@ -119,11 +119,7 @@ def resize_one_image_by_width(image_path, output_path, new_width):
   #  change size 
    resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
-  # save new image
-   resized_image.save(output_path)
-   print(f"({new_width}, {new_height})")
-
-   return new_width, new_height
+   return resized_image
 
 
 
@@ -165,11 +161,20 @@ def resize_image():
    filepath = os.path.join(UPLOAD_FOLDER, file.filename)
    file.save(filepath)
 
-  #  change image size 
-   resized_filepath = os.path.join(UPLOAD_FOLDER, f"resized_{file.filename}")
-   resize_one_image_by_width(filepath, resized_filepath, new_width)
+  #  set the output image path
+   output_path = 'tmp/resized_image.jpg'
 
-   return send_file(resized_filepath, as_attachment=True)
+   try:
+
+    #  change image size 
+    resize_one_image_by_width(filepath, new_width)
+
+    #  moved the resized image to the output path 
+    os.rename(filepath, output_path)
+
+    return send_file(output_path, mimetype='image/jpeg', as_attachment=True, download_name='resized_image.jpg')
+   except Exception as e:
+      return jsonify({"error": str(e)}), 500
 
 @app.route('/process', methods=['POST'])
 def process_image():

@@ -55,28 +55,6 @@ def transform_directions(cordinates, rect_points, angle):
   return dst_points ,new_rect_points_1
 
 
-def resize_one_image_by_width(image_path, output_path, new_width):
-  # open main image 
-  image = Image.open(image_path)
-  
-  # main image size 
-  original_width, original_height = image.size
-  
-  # Calculating the appropriate height
-  new_height = int((new_width / original_width) * original_height)
-  
-  # Change size 
-  resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-  
-  # save new image 
-  resized_image.save(output_path)
-  print(f"({new_width}, {new_height})")
-
-def resize_multi_image(image_path,output_paths):
-  widths = [800, 400, 200]
-  for output_path, width in zip(output_paths, widths):
-    resize_one_image_by_width(image_path, output_path, width)
-
 
 def cover_plate(model, image, logo):
   # Call model
@@ -124,15 +102,29 @@ def cover_plate(model, image, logo):
     masked_base = cv2.bitwise_and(base_image, cv2.bitwise_not(mask))
     base_image = cv2.add(masked_base, warped_overlay)
 
-  processed_image_path = "/tmp/output_image.jpg"
-  cv2.imwrite(processed_image_path, cv2.cvtColor(base_image, cv2.COLOR_RGB2BGR))
+  cv2.imwrite(image, cv2.cvtColor(base_image, cv2.COLOR_RGB2BGR))
+  return base_image
 
-  # generate resized versions
-  output_paths = ["/tmp/output_image_800.jpg", "/tmp/output_image_400.jpg", "/tmp/output_image_200.jpg"]
-  resize_multi_image(processed_image_path, output_paths)
 
-  # return all file paths
-  return processed_image_path, output_paths
+def resize_one_image_by_width(image_path, output_path, new_width):
+   
+   image = Image.open(image_path)
+
+  #  main image size
+   original_width, original_height = image.size 
+
+  #  calculating the appropriate height
+   new_height = int((new_width / original_width)* original_height)
+
+  #  change size 
+   resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
+
+  # save new image
+   resized_image.save(output_path)
+   print(f"({new_width}, {new_height})")
+
+   return new_width, new_height
+
 
 
 # # test the model
@@ -149,8 +141,35 @@ app = Flask(__name__)
 model = YOLO("/app/best.pt")
 logo = '/app/logo.png'
 
+UPLOAD_FOLDER = 'tmp/uploads'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 # Function definitions (transform_directions and cover_plate) remain unchanged
 
+@app.route('/')
+def index():
+   return render_template('index.html')
+
+@app.route('/resize', methods=['POST'])
+def resize_image():
+   if 'file' not in request.files:
+      return "No file sent.", 400
+   
+   file = request.files['file']
+   if file.filename == '':
+      return "The file name is empty." , 400
+   
+   new_width = int(request.form['width'])
+
+  #  Save the uploaded file 
+   filepath = os.path.join(UPLOAD_FOLDER, file.filename)
+   file.save(filepath)
+
+  #  change image size 
+   resized_filepath = os.path.join(UPLOAD_FOLDER, f"resized_{file.filename}")
+   resize_one_image_by_width(filepath, resized_filepath, new_width)
+
+   return send_file(resized_filepath, as_attachment=True)
 
 @app.route('/process', methods=['POST'])
 def process_image():
@@ -164,31 +183,21 @@ def process_image():
     input_image_path = "/tmp/input_image.jpg"
     file.save(input_image_path)
     
+    # Set the output image path
+    output_image_path = "/tmp/output_image.jpg"
     
     try:
         # Process the image with YOLO model and overlay logo
-        processed_image_path, resized_paths = cover_plate(model, input_image_path, logo)
+        cover_plate(model, input_image_path, logo)
         
-        # Return succes message and links to download the images 
-        response = {
-           "orginal": request.host_url + "download?file=" + processed_image_path,
-           "resized_800": request.host_url + "download?file=" + resized_paths[0],
-           "resized_400": request.host_url + "download?file=" + resized_paths[1],
-           "resized_200": request.host_url + "download?file=" + resized_paths[2]
-           }
-        return jsonify(response)
+        # Move the processed image to the output path
+        os.rename(input_image_path, output_image_path)
+        
+        # Return success message and link to download the image
+        return send_file(output_image_path, mimetype='image/jpeg', as_attachment=True, download_name="processed_image.jpg")
     except Exception as e:
         return jsonify({"error": str(e)}), 500
-    
-
-@app.route('/download')
-def download_file():
-   file_path = request.args.get('file')
-   if not file_path or not os.path.exists(file_path):
-      return jsonify({"error": "File not found"}),404
-   return send_file(file_path, mimetype="image/jpg", as_attachment=True)
 
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=8080)
-    

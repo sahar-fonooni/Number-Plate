@@ -1,6 +1,6 @@
 import ultralytics
 from ultralytics import YOLO
-from flask import Flask, request, jsonify, send_file
+from flask import Flask, request, jsonify, send_file, render_template
 from PIL import Image
 import matplotlib.pyplot as plt
 import numpy as np
@@ -106,7 +106,7 @@ def cover_plate(model, image, logo):
   return base_image
 
 
-def resize_one_image_by_width(image_path, new_width):
+def resize_one_image_by_width(image_path, new_width, output_path):
    
    image = Image.open(image_path)
 
@@ -118,8 +118,7 @@ def resize_one_image_by_width(image_path, new_width):
 
   #  change size 
    resized_image = image.resize((new_width, new_height), Image.Resampling.LANCZOS)
-
-   return resized_image
+   resize_image.save(output_path)
 
 
 
@@ -138,7 +137,9 @@ model = YOLO("/app/best.pt")
 logo = '/app/logo.png'
 
 UPLOAD_FOLDER = 'tmp/uploads'
+RESIZE_FOLDER = 'tmp/resized'
 os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+os.makedirs(RESIZE_FOLDER, exist_ok=True)
 
 # Function definitions (transform_directions and cover_plate) remain unchanged
 
@@ -162,15 +163,13 @@ def resize_image():
    file.save(filepath)
 
   #  set the output image path
-   output_path = 'tmp/resized_image.jpg'
+   output_path = os.path.join(RESIZE_FOLDER, 'resized_image.jpg')
 
    try:
 
-    #  change image size 
-    resize_one_image_by_width(filepath, new_width)
+    #  resize the image and save it to the output path
+    resize_one_image_by_width(filepath, new_width, output_path)
 
-    #  moved the resized image to the output path 
-    os.rename(filepath, output_path)
 
     return send_file(output_path, mimetype='image/jpeg', as_attachment=True, download_name='resized_image.jpg')
    except Exception as e:

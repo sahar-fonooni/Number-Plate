@@ -173,7 +173,7 @@ def resize_image():
 
     return send_file(output_path, mimetype='image/jpeg', as_attachment=True, download_name='resized_image.jpg')
    except Exception as e:
-      return jsonify({"error": str(e)}), 500
+      return jsonify({"error": str(e)}), 404
 
 @app.route('/process', methods=['POST'])
 def process_image():
@@ -200,7 +200,7 @@ def process_image():
         # Return success message and link to download the image
         return send_file(output_image_path, mimetype='image/jpeg', as_attachment=True, download_name="processed_image.jpg")
     except Exception as e:
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"error": str(e)}), 404
 
 
 if __name__ == "__main__":
